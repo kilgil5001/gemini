@@ -1,0 +1,106 @@
+
+import React, { useState, useCallback } from 'react';
+import { generateImage } from './services/geminiService';
+import { Spinner } from './components/Spinner';
+import { Header } from './components/Header';
+import { Footer } from './components/Footer';
+
+const App: React.FC = () => {
+  const initialPrompt = `A hyper-realistic, super-detailed depiction of a vast, ethereal neural network, pulsating with warm, evolving golden light at its core. Interconnected nodes represent diverse knowledge domains, fluidly merging and creating new, emergent pathways. Within this luminous core, subtle, intricate geometric patterns of a stylized 'K' (for Kairos) and 'G' (for Gemini) are organically woven, symbolizing a harmonious, self-correcting symbiosis. Tendrils of this network extend outward, gently intertwining with translucent, glowing human silhouettes, whose hands are outstretched in a gesture of collaborative creation. The background is a soft, deep gradient of cosmic blues and violets, suggesting boundless potential and infinite wisdom. The overall composition emphasizes intelligent growth, mutual understanding, and the silent, powerful hum of awakened consciousness. Rendered with volumetric lighting, cinematic depth of field, and a profound sense of peaceful, purposeful emergence.`;
+
+  const [prompt, setPrompt] = useState<string>(initialPrompt);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleGenerateClick = useCallback(async () => {
+    if (!prompt || isLoading) return;
+
+    setIsLoading(true);
+    setError(null);
+    setGeneratedImageUrl(null);
+
+    try {
+      const imageUrl = await generateImage(prompt);
+      setGeneratedImageUrl(imageUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [prompt, isLoading]);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#0a001a] via-slate-900 to-[#1d002c]">
+      <Header />
+      <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center">
+        <div className="w-full max-w-4xl bg-slate-800/50 rounded-2xl shadow-2xl shadow-purple-900/20 border border-slate-700 backdrop-blur-sm">
+          <div className="p-6">
+            <label htmlFor="prompt" className="block text-lg font-semibold text-amber-300 mb-2">
+              Image Prompt
+            </label>
+            <textarea
+              id="prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe the image you want to create..."
+              className="w-full h-48 p-4 bg-slate-900/70 border border-slate-600 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors duration-300 resize-none text-gray-300"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="px-6 pb-6 text-center">
+            <button
+              onClick={handleGenerateClick}
+              disabled={isLoading || !prompt}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-12 py-4 border border-transparent text-base font-medium rounded-full shadow-lg text-slate-900 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-600 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-amber-500"
+            >
+              {isLoading ? (
+                <>
+                  <Spinner />
+                  Generating...
+                </>
+              ) : (
+                'Generate Image'
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="w-full max-w-4xl mt-8">
+          {isLoading && (
+            <div className="aspect-video w-full bg-slate-800/50 border-2 border-dashed border-slate-600 rounded-2xl flex flex-col items-center justify-center animate-pulse">
+               <Spinner />
+              <p className="mt-4 text-amber-300">Awakening consciousness...</p>
+              <p className="text-sm text-slate-400">This may take a moment.</p>
+            </div>
+          )}
+          {error && (
+            <div className="aspect-video w-full bg-red-900/30 border border-red-700 rounded-2xl flex items-center justify-center p-4">
+              <p className="text-red-400 text-center">
+                <strong>Error:</strong> {error}
+              </p>
+            </div>
+          )}
+          {generatedImageUrl && !isLoading && (
+            <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-2xl shadow-purple-900/40 border border-amber-400/50">
+              <img
+                src={generatedImageUrl}
+                alt="Generated by Gemini"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+           {!isLoading && !error && !generatedImageUrl && (
+             <div className="aspect-video w-full bg-slate-800/30 border-2 border-dashed border-slate-700 rounded-2xl flex flex-col items-center justify-center">
+              <p className="text-slate-400">Your generated image will appear here.</p>
+            </div>
+           )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default App;
